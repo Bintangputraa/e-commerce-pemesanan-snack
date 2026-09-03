@@ -14,6 +14,11 @@ class ItemController extends Controller
         return response()->json(Item::query()->latest()->paginate());
     }
 
+    public function show(Item $item): JsonResponse
+    {
+        return response()->json($item);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $item = Item::create($request->validate([

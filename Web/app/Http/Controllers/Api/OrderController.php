@@ -9,27 +9,27 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Order::query()->with(['user', 'orderDetails.item'])->latest()->paginate());
+        return response()->json($request->user()->orders()->with(['user', 'orderDetails.item'])->latest()->paginate());
     }
 
     public function store(Request $request): JsonResponse
     {
-        $order = Order::create($request->validate([
-            'id_user' => ['required', 'integer', 'exists:users,id'],
+        $data = $request->validate([
             'total_harga' => ['required', 'numeric', 'min:0'],
             'status_pembayaran' => ['sometimes', 'string', 'max:50'],
             'status_pesanan' => ['sometimes', 'string', 'max:50'],
-        ]));
+        ]);
+        $order = Order::create(['id_user' => $request->user()->id, ...$data]);
 
         return response()->json($order->load(['user', 'orderDetails.item']), 201);
     }
 
     public function update(Request $request, Order $order): JsonResponse
     {
+        abort_unless($order->id_user === $request->user()->id, 404);
         $order->update($request->validate([
-            'id_user' => ['sometimes', 'required', 'integer', 'exists:users,id'],
             'total_harga' => ['sometimes', 'required', 'numeric', 'min:0'],
             'status_pembayaran' => ['sometimes', 'required', 'string', 'max:50'],
             'status_pesanan' => ['sometimes', 'required', 'string', 'max:50'],
@@ -38,8 +38,9 @@ class OrderController extends Controller
         return response()->json($order->load(['user', 'orderDetails.item']));
     }
 
-    public function destroy(Order $order): JsonResponse
+    public function destroy(Request $request, Order $order): JsonResponse
     {
+        abort_unless($order->id_user === $request->user()->id, 404);
         $order->delete();
 
         return response()->json(status: 204);

@@ -9,27 +9,27 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Notification::query()->with('user')->latest()->paginate());
+        return response()->json($request->user()->notifications()->with('user')->latest()->paginate());
     }
 
     public function store(Request $request): JsonResponse
     {
-        $notification = Notification::create($request->validate([
-            'id_user' => ['required', 'integer', 'exists:users,id'],
+        $data = $request->validate([
             'judul' => ['required', 'string', 'max:255'],
             'pesan' => ['required', 'string'],
             'status_baca' => ['sometimes', 'boolean'],
-        ]));
+        ]);
+        $notification = Notification::create(['id_user' => $request->user()->id, ...$data]);
 
         return response()->json($notification->load('user'), 201);
     }
 
     public function update(Request $request, Notification $notification): JsonResponse
     {
+        abort_unless($notification->id_user === $request->user()->id, 404);
         $notification->update($request->validate([
-            'id_user' => ['sometimes', 'required', 'integer', 'exists:users,id'],
             'judul' => ['sometimes', 'required', 'string', 'max:255'],
             'pesan' => ['sometimes', 'required', 'string'],
             'status_baca' => ['sometimes', 'required', 'boolean'],
@@ -38,8 +38,9 @@ class NotificationController extends Controller
         return response()->json($notification->load('user'));
     }
 
-    public function destroy(Notification $notification): JsonResponse
+    public function destroy(Request $request, Notification $notification): JsonResponse
     {
+        abort_unless($notification->id_user === $request->user()->id, 404);
         $notification->delete();
 
         return response()->json(status: 204);

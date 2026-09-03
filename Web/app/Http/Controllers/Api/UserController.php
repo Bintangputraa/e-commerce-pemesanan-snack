@@ -16,6 +16,11 @@ class UserController extends Controller
         return response()->json(User::query()->latest()->paginate());
     }
 
+    public function show(User $user): JsonResponse
+    {
+        return response()->json($user);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $user = User::create($request->validate([

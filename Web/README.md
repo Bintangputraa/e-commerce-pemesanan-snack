@@ -160,19 +160,45 @@ php artisan test
 composer run test
 ```
 
-## Endpoint API Utama
+## Endpoint API untuk Kotlin
 
-Semua endpoint berikut menggunakan prefix `/api`:
+Semua endpoint berikut menggunakan prefix `/api`. Endpoint selain login,
+registrasi, katalog item, dan webhook membutuhkan header:
+
+```text
+Authorization: Bearer <token>
+```
+
+Token didapat dari `auth/register` atau `auth/login` dan berlaku selama 30 hari.
 
 | Method | Endpoint | Keterangan |
 | --- | --- | --- |
-| GET/POST/PUT/DELETE | `/items` | Kelola item camilan |
-| GET/POST/PUT/DELETE | `/carts` | Kelola keranjang |
-| GET/POST/PUT/DELETE | `/favorites` | Kelola favorit |
-| GET/POST/PUT/DELETE | `/orders` | Kelola pesanan |
-| GET/POST/PUT/DELETE | `/notifications` | Kelola notifikasi |
-| POST | `/midtrans/notification` | Webhook status pembayaran |
-| GET/POST | `/order-details` | Kelola detail pesanan |
+| POST | `/auth/register` | Registrasi pelanggan dan mendapatkan token |
+| POST | `/auth/login` | Login pelanggan dan mendapatkan token |
+| GET | `/auth/me` | Profil pengguna yang sedang login |
+| POST | `/auth/logout` | Menghapus token aktif |
+| POST | `/checkout` | Membuat pesanan dan mendapatkan Snap token |
+| POST | `/orders/{order}/pay` | Membuat ulang pembayaran |
+| GET | `/orders/{order}/payment-status` | Memeriksa status pembayaran |
+| POST | `/midtrans/notification` | Webhook status pembayaran (tanpa token) |
+
+Resource `items` (katalog), `carts`, `favorites`, `orders`,
+`notifications`, dan `order-details` tersedia untuk aplikasi Kotlin dengan
+token pengguna. Perubahan katalog dan resource `users` hanya dapat dilakukan
+oleh admin.
+
+Route web tetap terpisah di `routes/web.php` dan menggunakan session Fortify.
+
+Resource API:
+
+| Method | Endpoint | Keterangan |
+| --- | --- | --- |
+| GET | `/items`, `/items/{item}` | Katalog camilan |
+| GET/POST/PUT/DELETE | `/carts` | Keranjang milik pengguna |
+| GET/POST/PUT/DELETE | `/favorites` | Favorit milik pengguna |
+| GET/POST/PUT/DELETE | `/orders` | Pesanan milik pengguna |
+| GET/POST/PUT/DELETE | `/notifications` | Notifikasi milik pengguna |
+| GET/POST | `/order-details` | Detail pesanan milik pengguna |
 
 ## Struktur Direktori
 
