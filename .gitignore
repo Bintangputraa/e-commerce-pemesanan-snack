@@ -1,0 +1,22 @@
+# Laravel web project
+Web/.env
+Web/.env.backup
+Web/.env.production
+Web/vendor/
+Web/node_modules/
+Web/public/build/
+Web/public/hot
+Web/storage/*.key
+Web/storage/pail/
+Web/.phpunit.cache/
+
+# Kotlin / Gradle project
+Aplikasi/.gradle/
+Aplikasi/build/
+Aplikasi/**/build/
+Aplikasi/.idea/
+Aplikasi/*.iml
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
