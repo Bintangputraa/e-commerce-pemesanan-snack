@@ -42,6 +42,7 @@ RUN printf "APP_ENV=production\nAPP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     && touch database/database.sqlite
 COPY package*.json ./
 RUN npm ci
+RUN php artisan wayfinder:generate --with-form -vvv
 RUN npm run build
 
 FROM php:8.3-cli
