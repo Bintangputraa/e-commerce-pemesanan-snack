@@ -38,7 +38,8 @@ COPY resources ./resources
 COPY routes ./routes
 COPY vite.config.ts tsconfig.json components.json ./
 RUN printf "APP_ENV=production\nAPP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\nDB_CONNECTION=sqlite\n" > .env \
-    && mkdir -p database \
+    && mkdir -p database storage/framework/cache storage/framework/sessions \
+    storage/framework/views bootstrap/cache \
     && touch database/database.sqlite
 COPY package*.json ./
 RUN npm ci
