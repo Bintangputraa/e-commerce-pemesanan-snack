@@ -29,6 +29,7 @@ RUN apk add --no-cache \
 RUN ln -s /usr/bin/php83 /usr/bin/php
 COPY --from=dependencies /var/www/html/vendor ./vendor
 COPY composer.json composer.lock artisan bootstrap app config database public resources routes ./
+COPY vite.config.ts tsconfig.json components.json ./
 RUN printf "APP_ENV=production\nAPP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\nDB_CONNECTION=sqlite\n" > .env \
     && mkdir -p database \
     && touch database/database.sqlite
