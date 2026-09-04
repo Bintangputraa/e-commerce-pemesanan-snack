@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\OrderDetailController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CustomerOrderController;
+use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/register', [AuthController::class, 'register'])->name('api.auth.register');
@@ -35,11 +36,11 @@ Route::middleware('api.token')->group(function (): void {
     Route::get('orders/{order}/payment-status', [CustomerOrderController::class, 'paymentStatus'])
         ->name('api.orders.payment-status');
 
-    Route::middleware('admin')->group(function (): void {
+    Route::middleware(EnsureAdmin::class)->group(function (): void {
         Route::post('items', [ItemController::class, 'store'])->name('api.items.store');
         Route::put('items/{item}', [ItemController::class, 'update'])->name('api.items.update');
         Route::patch('items/{item}', [ItemController::class, 'update']);
         Route::delete('items/{item}', [ItemController::class, 'destroy'])->name('api.items.destroy');
     });
-    Route::apiResource('users', UserController::class)->middleware('admin');
+    Route::apiResource('users', UserController::class)->middleware(EnsureAdmin::class);
 });
