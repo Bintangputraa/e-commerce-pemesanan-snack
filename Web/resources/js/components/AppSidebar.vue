@@ -13,6 +13,7 @@ import { usePage } from '@inertiajs/vue3';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import admin from '@/routes/admin';
 import {
     Sidebar,
     SidebarContent,
@@ -31,14 +32,18 @@ const user = computed(() => page.props.auth.user);
 const mainNavItems = computed<NavItem[]>(() =>
     user.value.role === 'admin'
         ? [
-              { title: 'Admin Dashboard', href: '/admin', icon: LayoutGrid },
               {
-                  title: 'Kelola Pesanan',
-                  href: '/admin/orders',
-                  icon: ClipboardList,
+                 title: 'Admin Dashboard',
+                 href: admin.dashboard(),
+                 icon: LayoutGrid,
               },
-              { title: 'Kelola Menu', href: '/admin/items', icon: Package },
-              { title: 'Kelola User', href: '/admin/users', icon: Users },
+              {
+                 title: 'Kelola Pesanan',
+                 href: admin.orders(),
+                 icon: ClipboardList,
+              },
+              { title: 'Kelola Menu', href: admin.items(), icon: Package },
+              { title: 'Kelola User', href: admin.users(), icon: Users },
           ]
         : [
               {

@@ -3,6 +3,7 @@ import { Form, Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import admin from '@/routes/admin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,7 +42,7 @@ function closeEditDialog(): void {
 
 function deleteUser(user: User): void {
     if (window.confirm(`Hapus user ${user.name}?`)) {
-        router.delete(`/admin/users/${user.id}`, {
+        router.delete(admin.users.destroy(user.id).url, {
             onSuccess: closeEditDialog,
         });
     }
@@ -88,7 +89,7 @@ function deleteUser(user: User): void {
                             ></DialogHeader
                         >
                         <Form
-                            action="/admin/users"
+                            :action="admin.users.store.url()"
                             method="post"
                             class="grid gap-4"
                             v-slot="{ errors, processing }"
@@ -243,7 +244,7 @@ function deleteUser(user: User): void {
             >
             <Form
                 :key="editingUser.id"
-                :action="`/admin/users/${editingUser.id}`"
+                :action="admin.users.update.url(editingUser.id)"
                 method="put"
                 class="grid gap-4"
                 v-slot="{ errors, processing }"

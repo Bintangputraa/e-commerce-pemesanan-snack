@@ -3,6 +3,7 @@ import { Form, Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import InputError from '@/components/InputError.vue';
+import admin from '@/routes/admin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,7 +42,7 @@ function closeEditDialog(): void {
 
 function deleteItem(item: Item): void {
     if (window.confirm(`Hapus menu ${item.nama}?`)) {
-        router.delete(`/admin/items/${item.id}`, {
+        router.delete(admin.items.destroy(item.id).url, {
             onSuccess: closeEditDialog,
         });
     }
@@ -83,7 +84,7 @@ function deleteItem(item: Item): void {
                             >
                         </DialogHeader>
                         <Form
-                            action="/admin/items"
+                            :action="admin.items.store.url()"
                             method="post"
                             class="grid gap-4"
                             v-slot="{ errors, processing }"
@@ -217,7 +218,7 @@ function deleteItem(item: Item): void {
             </DialogHeader>
             <Form
                 :key="editingItem.id"
-                :action="`/admin/items/${editingItem.id}`"
+                :action="admin.items.update.url(editingItem.id)"
                 method="put"
                 class="grid gap-4"
                 v-slot="{ errors, processing }"
