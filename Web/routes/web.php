@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomerOrderController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\StorefrontController;
+use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', StorefrontController::class)->name('home');
@@ -21,7 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::post('orders/{order}/pay', [CustomerOrderController::class, 'pay'])->name('orders.pay');
     Route::get('orders/{order}/payment-status', [CustomerOrderController::class, 'paymentStatus'])->name('orders.payment-status');
-    Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware(EnsureAdmin::class)->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('orders', [AdminController::class, 'orders'])->name('orders');
         Route::get('items', [AdminController::class, 'items'])->name('items');
