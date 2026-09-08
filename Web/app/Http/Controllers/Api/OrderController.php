@@ -154,18 +154,6 @@ class OrderController extends Controller
         ], 201); // 201 Created
     }
 
-    public function update(Request $request, Order $order): JsonResponse
-    {
-        abort_unless($order->id_user === $request->user()->id, 404);
-        $order->update($request->validate([
-            'total_harga' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'status_pembayaran' => ['sometimes', 'required', 'string', 'max:50'],
-            'status_pesanan' => ['sometimes', 'required', 'string', 'max:50'],
-        ]));
-
-        return response()->json($order->load(['user', 'orderDetails.item']));
-    }
-
     public function destroy(Request $request, Order $order): JsonResponse
     {
         abort_unless($order->id_user === $request->user()->id, 404);
