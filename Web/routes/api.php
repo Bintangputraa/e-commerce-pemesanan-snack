@@ -34,7 +34,6 @@ Route::middleware('api.token')->group(function (): void {
 
     Route::post('checkout', [CheckoutController::class, 'store'])->name('api.checkout.store');
     Route::post('promos/check', [PromoController::class, 'check']);
-    Route::apiResource('orders', OrderController::class);
     Route::post('orders/{order}/pay', [CustomerOrderController::class, 'pay'])->name('api.orders.pay');
     Route::get('orders/{order}/payment-status', [CustomerOrderController::class, 'paymentStatus'])
         ->name('api.orders.payment-status');
