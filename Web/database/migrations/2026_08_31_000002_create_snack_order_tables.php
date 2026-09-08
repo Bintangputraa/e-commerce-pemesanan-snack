@@ -61,10 +61,6 @@ return new class extends Migration
 
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_user')->nullable()->constrained('users')->cascadeOnDelete();
-            $table->string('judul')->nullable();
-            $table->text('pesan')->nullable();
-            $table->boolean('status_baca')->default(false);
             $table->timestamp('transaction_time')->nullable();
             $table->string('transaction_status')->nullable();
             $table->string('transaction_id')->nullable();

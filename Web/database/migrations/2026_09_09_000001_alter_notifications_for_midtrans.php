@@ -12,9 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('notifications', function (Blueprint $table) {
-            $table->foreignId('id_user')->nullable()->change();
-            $table->string('judul')->nullable()->change();
-            $table->text('pesan')->nullable()->change();
             $table->timestamp('transaction_time')->nullable()->after('status_baca');
             $table->string('transaction_status')->nullable()->after('transaction_time');
             $table->string('transaction_id')->nullable()->after('transaction_status');

@@ -17,10 +17,6 @@ class NotificationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'id_user' => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
-            'judul' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'pesan' => ['sometimes', 'nullable', 'string'],
-            'status_baca' => ['sometimes', 'boolean'],
             'transaction_time' => ['sometimes', 'nullable', 'date_format:Y-m-d H:i:s'],
             'transaction_status' => ['sometimes', 'nullable', 'string', 'max:50'],
             'transaction_id' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -36,24 +32,9 @@ class NotificationController extends Controller
             'currency' => ['sometimes', 'nullable', 'string', 'max:10'],
         ]);
 
-        $userId = $request->input('id_user', $request->user()?->id);
-        $data['id_user'] = $userId;
-
-        if (empty($data['judul']) && ! empty($data['transaction_status'])) {
-            $data['judul'] = 'Pembayaran '.strtoupper($data['transaction_status']);
-        }
-
-        if (empty($data['pesan']) && ! empty($data['status_message'])) {
-            $data['pesan'] = $data['status_message'];
-        }
-
-        if (empty($data['pesan']) && ! empty($data['transaction_status'])) {
-            $data['pesan'] = 'Status transaksi: '.strtoupper($data['transaction_status']);
-        }
-
         $notification = Notification::create($data);
 
-        return response()->json($notification->load('user'), 201);
+        return response()->json($notification, 201);
     }
 
     public function update(Request $request, Notification $notification): JsonResponse
@@ -78,7 +59,7 @@ class NotificationController extends Controller
             'currency' => ['sometimes', 'nullable', 'string', 'max:10'],
         ]));
 
-        return response()->json($notification->load('user'));
+        return response()->json($notification);
     }
 
     public function destroy(Request $request, Notification $notification): JsonResponse

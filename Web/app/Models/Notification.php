@@ -10,10 +10,6 @@ class Notification extends Model
     protected $table = 'notifications';
 
     protected $fillable = [
-        'id_user',
-        'judul',
-        'pesan',
-        'status_baca',
         'transaction_time',
         'transaction_status',
         'transaction_id',
@@ -30,14 +26,8 @@ class Notification extends Model
     ];
 
     protected $casts = [
-        'status_baca' => 'boolean',
         'transaction_time' => 'datetime',
         'settlement_time' => 'datetime',
         'gross_amount' => 'decimal:2',
     ];
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'id_user');
-    }
 }
