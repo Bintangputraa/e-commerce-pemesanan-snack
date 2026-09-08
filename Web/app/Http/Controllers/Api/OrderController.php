@@ -79,22 +79,22 @@ class OrderController extends Controller
             }
         }
 
-        $order = DB::transaction(function () use ($data, $request) {
+        $order = DB::transaction(function () use ($data, $discountValue, $request) {
             $items = Item::query()->whereIn('id', collect($data['items'])->pluck('id'))->get()->keyBy('id');
             $subtotal = 0;
             foreach ($data['items'] as $line) {
                 $subtotal += $items[$line['id']]->harga * $line['quantity'];
             }
-            $discount = $data['kode_voucher'] === 'CEMIL10' ? round($subtotal * 0.1, 2) : 0;
+
             $newOrder = Order::create([
                 'id_user' => $request->user()->id,
-                'total_harga' => $subtotal - $discount,
+                'total_harga' => $subtotal - $discountValue,
                 'status_pembayaran' => 'pending',
                 'status_pesanan' => 'pending',
                 'alamat_pengiriman' => $data['alamat_pengiriman'],
                 'tanggal_pesan' => $data['tanggal_pesan'],
                 'kode_voucher' => $data['kode_voucher'] ?? null,
-                'diskon' => $discount,
+                'diskon' => $discountValue,
             ]);
 
             foreach ($data['items'] as $line) {
