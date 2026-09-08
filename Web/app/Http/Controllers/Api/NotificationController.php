@@ -39,11 +39,8 @@ class NotificationController extends Controller
 
     public function update(Request $request, Notification $notification): JsonResponse
     {
-        abort_unless($notification->id_user === $request->user()->id, 404);
+        abort_unless($notification->id_user === $request, 404);
         $notification->update($request->validate([
-            'judul' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'pesan' => ['sometimes', 'nullable', 'string'],
-            'status_baca' => ['sometimes', 'required', 'boolean'],
             'transaction_time' => ['sometimes', 'nullable', 'date_format:Y-m-d H:i:s'],
             'transaction_status' => ['sometimes', 'nullable', 'string', 'max:50'],
             'transaction_id' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -62,11 +59,4 @@ class NotificationController extends Controller
         return response()->json($notification);
     }
 
-    public function destroy(Request $request, Notification $notification): JsonResponse
-    {
-        abort_unless($notification->id_user === $request->user()->id, 404);
-        $notification->delete();
-
-        return response()->json(status: 204);
-    }
 }
