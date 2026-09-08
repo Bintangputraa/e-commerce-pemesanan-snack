@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderDetailController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\PromoController;
 use App\Http\Controllers\CustomerOrderController;
 use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,8 @@ Route::middleware('api.token')->group(function (): void {
     Route::delete('orders/{id_order}/items/{id_item}', [OrderDetailController::class, 'destroy']);
 
     Route::post('checkout', [CheckoutController::class, 'store'])->name('api.checkout.store');
+    Route::post('promos/check', [PromoController::class, 'check']);
+    Route::apiResource('orders', OrderController::class);
     Route::post('orders/{order}/pay', [CustomerOrderController::class, 'pay'])->name('api.orders.pay');
     Route::get('orders/{order}/payment-status', [CustomerOrderController::class, 'paymentStatus'])
         ->name('api.orders.payment-status');
