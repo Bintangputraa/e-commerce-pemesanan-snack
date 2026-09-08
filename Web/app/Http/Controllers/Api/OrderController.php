@@ -22,9 +22,8 @@ class OrderController extends Controller
     {
         // 1. Validasi input dari Android
         $data = $request->validate([
-            'address' => ['required', 'string'],
-            'notes' => ['nullable', 'string'],
-            'voucher_code' => ['nullable', 'string'],
+            'alamat_pengiriman' => ['required', 'string'],
+            'kode_voucher' => ['nullable', 'string'],
         ]);
 
         $user = $request->user();
@@ -53,8 +52,8 @@ class OrderController extends Controller
         }
 
         // 4. LOGIC VOUCHER: Tambahkan Diskon sebagai item NEGATIF
-        if ($request->filled('voucher_code')) {
-            $promo = Promo::where('code', $request->voucher_code)->first();
+        if ($request->filled('kode_voucher')) {
+            $promo = Promo::where('code', $request->kode_voucher)->first();
             
             // Validasi promo (Menggunakan fungsi isValid yang kita buat sebelumnya)
             if ($promo && $promo->isValid($total_gross)[0]) {
@@ -84,8 +83,7 @@ class OrderController extends Controller
             $newOrder = Order::create([
                 'id_user' => $user->id,
                 'total_harga' => $total_gross,
-                'address' => $data['address'],
-                'notes' => $data['notes'] ?? '',
+                'alamat_pengiriman' => $data['alamat_pengiriman'],
                 'status_pembayaran' => 'pending',
                 'status_pesanan' => 'pending'
             ]);
@@ -95,13 +93,13 @@ class OrderController extends Controller
                 OrderDetail::create([
                     'id_order' => $newOrder->id,
                     'id_item' => $cart->id_item,
-                    'quantity' => $cart->jumlah,
-                    'price' => $cart->item->harga
+                    'jumlah' => $cart->jumlah,
+                    'harga_satuan' => $cart->item->harga,
+                    'catatan' => $data['catatan'] ?? ''
                 ]);
             }
 
-            // Opsional: Hapus keranjang setelah order dibuat (atau tunggu callback bayar)
-            // Cart::where('id_user', $user->id)->delete();
+            Cart::where('id_user', $user->id)->delete();
 
             return $newOrder;
         });
