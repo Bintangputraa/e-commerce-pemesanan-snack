@@ -77,6 +77,8 @@ class OrderController extends Controller
                 
                 $promo->increment('used');
             }
+        } else {
+            $discountValue = 0;
         }
 
         $order = DB::transaction(function () use ($data, $discountValue, $request) {
