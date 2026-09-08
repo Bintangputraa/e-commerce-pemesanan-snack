@@ -20,7 +20,6 @@ class OrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        // 1. Validasi input dari Android
         $data = $request->validate([
             'alamat_pengiriman' => ['required', 'string'],
             'kode_voucher' => ['nullable', 'string'],
@@ -28,7 +27,6 @@ class OrderController extends Controller
 
         $user = $request->user();
         
-        // 2. Ambil data keranjang user (untuk keamanan, jangan percaya total_harga dari client)
         $cartItems = Cart::where('id_user', $user->id)->with('item')->get();
         if ($cartItems->isEmpty()) {
             return response()->json(['message' => 'Keranjang kosong'], 400);
@@ -37,7 +35,6 @@ class OrderController extends Controller
         $total_gross = 0;
         $item_details = [];
 
-        // 3. Susun item_details dari produk asli
         foreach ($cartItems as $cart) {
             $price = $cart->item->harga;
             $qty = $cart->jumlah;
@@ -51,34 +48,28 @@ class OrderController extends Controller
             ];
         }
 
-        // 4. LOGIC VOUCHER: Tambahkan Diskon sebagai item NEGATIF
         if ($request->filled('kode_voucher')) {
             $promo = Promo::where('code', $request->kode_voucher)->first();
             
-            // Validasi promo (Menggunakan fungsi isValid yang kita buat sebelumnya)
             if ($promo && $promo->isValid($total_gross)[0]) {
                 
-                // Hitung nilai diskon
                 $discountValue = ($promo->discount_type == 'percentage') 
                     ? ($total_gross * ($promo->discount_amount / 100)) 
                     : $promo->discount_amount;
 
-                // Tambahkan sebagai baris baru di item_details Midtrans
                 $item_details[] = [
                     'id' => 'VOUCHER-' . $promo->id,
-                    'price' => -(int)$discountValue, // WAJIB NEGATIF agar memotong total
+                    'price' => -(int)$discountValue,
                     'quantity' => 1,
                     'name' => 'Diskon: ' . $promo->code,
                 ];
                 
-                $total_gross -= $discountValue; // Update total akhir
+                $total_gross -= $discountValue;
                 
-                // Update quota used di database
                 $promo->increment('used');
             }
         }
 
-        // 5. Simpan Order ke Database
         $order = DB::transaction(function () use ($user, $total_gross, $data, $cartItems) {
             $newOrder = Order::create([
                 'id_user' => $user->id,
@@ -88,7 +79,6 @@ class OrderController extends Controller
                 'status_pesanan' => 'pending'
             ]);
 
-            // Pindahkan data dari cart ke order_details
             foreach ($cartItems as $cart) {
                 OrderDetail::create([
                     'id_order' => $newOrder->id,
@@ -104,28 +94,44 @@ class OrderController extends Controller
             return $newOrder;
         });
 
-        // 6. Siapkan Parameter Midtrans
         $midtrans_params = [
             'transaction_details' => [
                 'order_id' => 'ORD-' . $order->id . '-' . time(),
                 'gross_amount' => (int)$total_gross,
             ],
-            'item_details' => $item_details, // Variabel yang ditanyakan
+            'item_details' => $item_details,
             'customer_details' => [
                 'first_name' => $user->name,
                 'email' => $user->email,
             ],
         ];
 
-        // 7. Generate Snap Token (Gunakan library Midtrans PHP)
-        // $snapToken = \Midtrans\Snap::getSnapToken($midtrans_params);
+        $snapToken = \Midtrans\Snap::getSnapToken($midtrans_params);
 
         return response()->json([
             'success' => true,
             'order' => $order->load(['user', 'orderDetails.item']),
-            // 'snap_token' => $snapToken // Kirim ini ke Android untuk buka halaman pembayaran
+            'snap_token' => $snapToken
         ], 201);
     }
 
-    // Fungsi update dan destroy tetap seperti sebelumnya...
+    public function update(Request $request, Order $order): JsonResponse
+    {
+        abort_unless($order->id_user === $request->user()->id, 404);
+        $order->update($request->validate([
+            'total_harga' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'status_pembayaran' => ['sometimes', 'required', 'string', 'max:50'],
+            'status_pesanan' => ['sometimes', 'required', 'string', 'max:50'],
+        ]));
+
+        return response()->json($order->load(['user', 'orderDetails.item']));
+    }
+
+    public function destroy(Request $request, Order $order): JsonResponse
+    {
+        abort_unless($order->id_user === $request->user()->id, 404);
+        $order->delete();
+
+        return response()->json(status: 204);
+    }
 }
