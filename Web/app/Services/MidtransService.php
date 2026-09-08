@@ -99,6 +99,7 @@ class MidtransService
         };
 
         $order->update([
+            'midtrans_order_id' => $order->midtrans_order_id ?: ($payload['order_id'] ?? null),
             'payment_type' => $paymentType,
             'transaction_id' => $transactionId,
             'transaction_status' => $transactionStatus,

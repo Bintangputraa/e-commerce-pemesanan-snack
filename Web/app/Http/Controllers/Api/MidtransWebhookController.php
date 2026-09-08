@@ -62,10 +62,18 @@ class MidtransWebhookController extends Controller
             ], 403);
         }
 
+        $orderId = (string) ($payload['order_id'] ?? '');
         $order = Order::query()
-            ->where('midtrans_order_id', $payload['order_id'] ?? null)
-            ->orWhere('id_order', $payload['order_id'] ?? null)
+            ->where('midtrans_order_id', $orderId)
             ->first();
+
+        if (! $order && preg_match('/^SNACK-(\d+)-/i', $orderId, $matches)) {
+            $order = Order::query()->find((int) $matches[1]);
+        }
+
+        if (! $order && ctype_digit($orderId)) {
+            $order = Order::query()->find((int) $orderId);
+        }
 
         if (! $order) {
             return response()->json([
