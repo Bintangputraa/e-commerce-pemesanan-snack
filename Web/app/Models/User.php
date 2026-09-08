@@ -51,8 +51,4 @@ class User extends Authenticatable
         return $this->hasMany(Order::class, 'id_user');
     }
 
-    public function notifications(): HasMany
-    {
-        return $this->hasMany(Notification::class, 'id_user');
-    }
 }

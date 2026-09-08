@@ -15,13 +15,7 @@ class NotificationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = Notification::query()->latest('created_at');
-
-        if ($request->user() && method_exists($request->user(), 'notifications')) {
-            $query = $request->user()->notifications()->latest('created_at');
-        }
-
-        return response()->json($query->paginate());
+        return response()->json(Notification::query()->latest('created_at')->paginate());
     }
 
     public function store(Request $request): JsonResponse
