@@ -79,7 +79,7 @@ class OrderController extends Controller
             }
         }
 
-        $order = DB::transaction(function () use ($user, $total_gross, $data, $cartItems, $data, $request) {
+        $order = DB::transaction(function () use ($data, $request) {
             $items = Item::query()->whereIn('id', collect($data['items'])->pluck('id'))->get()->keyBy('id');
             $subtotal = 0;
             foreach ($data['items'] as $line) {
@@ -97,17 +97,17 @@ class OrderController extends Controller
                 'diskon' => $discount,
             ]);
 
-            foreach ($cartItems as $cart) {
-                OrderDetail::create([
-                    'id_order' => $newOrder->id,
-                    'id_item' => $cart->id_item,
-                    'jumlah' => $cart->jumlah,
-                    'harga_satuan' => $cart->item->harga,
-                    'catatan' => $data['catatan'] ?? ''
+            foreach ($data['items'] as $line) {
+                $newOrder->orderDetails()->create([
+                    'id_order' => $newOrder->id_order,
+                    'id_item' => $line['id'],
+                    'jumlah' => $line['quantity'],
+                    'harga_satuan' => $items[$line['id']]->harga,
+                    'catatan' => $line['catatan'] ?? null,
                 ]);
             }
 
-            Cart::where('id_user', $user->id)->delete();
+            Cart::where('id_user', $request->user()->id)->delete();
 
             return $newOrder;
         });
