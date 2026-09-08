@@ -10,6 +10,7 @@ use App\Models\Promo; // Pastikan Model Promo sudah dibuat
 use App\Models\Cart;
 use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,7 +23,7 @@ class OrderController extends Controller
         return response()->json($request->user()->orders()->with(['user', 'orderDetails.item'])->latest()->paginate());
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'alamat_pengiriman' => ['required', 'string', 'max:1000'],
@@ -81,14 +82,14 @@ class OrderController extends Controller
             $discountValue = 0;
         }
 
-        $order = DB::transaction(function () use ($data, $discountValue, $request) {
+        $order = DB::transaction(function () use ($data, $discountValue, $request): Order {
             $items = Item::query()->whereIn('id', collect($data['items'])->pluck('id'))->get()->keyBy('id');
             $subtotal = 0;
             foreach ($data['items'] as $line) {
                 $subtotal += $items[$line['id']]->harga * $line['quantity'];
             }
 
-            $newOrder = Order::create([
+            $order = Order::create([
                 'id_user' => $request->user()->id,
                 'total_harga' => $subtotal - $discountValue,
                 'status_pembayaran' => 'pending',
@@ -100,8 +101,8 @@ class OrderController extends Controller
             ]);
 
             foreach ($data['items'] as $line) {
-                $newOrder->orderDetails()->create([
-                    'id_order' => $newOrder->id_order,
+                $order->orderDetails()->create([
+                    'id_order' => $order->id_order,
                     'id_item' => $line['id'],
                     'jumlah' => $line['quantity'],
                     'harga_satuan' => $items[$line['id']]->harga,
@@ -111,7 +112,7 @@ class OrderController extends Controller
 
             Cart::where('id_user', $request->user()->id)->delete();
 
-            return $newOrder;
+            return $order;
         });
 
         try {
@@ -119,14 +120,15 @@ class OrderController extends Controller
         } catch (\Throwable $exception) {
             report($exception);
 
-            // Jika Midtrans error, kembalikan response JSON (Pesanan tetap tersimpan sebagai pending di DB)
-            return response()->json([
-                'success' => false,
-                'message' => 'Pesanan berhasil dibuat, namun pembayaran Midtrans gagal dibuat. ' . $exception->getMessage(),
-                'data' => [
-                    'order_id' => $order->id_order, // Dikirim agar aplikasi bisa melakukan 'retry payment' nanti
-                ]
-            ], 502); // 502 Bad Gateway
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => 'Pembayaran Midtrans gagal dibuat. '.$exception->getMessage(),
+                ], 502);
+            }
+
+            return back()->withErrors([
+                'payment' => 'Pembayaran Midtrans gagal dibuat. Silakan coba lagi.',
+            ]);
         }
 
         // 4. Update data transaksi Midtrans ke Order
