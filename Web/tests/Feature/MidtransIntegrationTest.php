@@ -99,3 +99,46 @@ test('midtrans webhook updates the payment status on an order', function () {
         'payment_type' => 'qris',
     ]);
 });
+
+test('notification endpoint stores payload from midtrans request body', function () {
+    $user = User::query()->create([
+        'name' => 'Ayu Snack',
+        'email' => 'ayu2@example.com',
+        'whatsapp' => '081234567892',
+        'alamat' => 'Jl. Melati No. 9',
+        'password' => bcrypt('password123'),
+        'role' => 'customer',
+    ]);
+
+    $payload = [
+        'transaction_time' => '2023-11-15 18:45:13',
+        'transaction_status' => 'settlement',
+        'transaction_id' => '513f1f01-c9da-474c-9fc9-d5c64364b709',
+        'status_message' => 'midtrans payment notification',
+        'status_code' => '200',
+        'signature_key' => 'eaef3687a6e34ddb2ee8b0c68e1994db42738ffeed7f0315bcf0cd90d90251334f54da1c3ea73e48cfa4a720614b61b4f5cbabf372a4b2cebdbaec344383c387',
+        'settlement_time' => '2023-11-15 22:45:13',
+        'payment_type' => 'gopay',
+        'order_id' => 'payment_notif_test_G959056152_25c09930-adec-4f30-b498-58038901d125',
+        'merchant_id' => 'G959056152',
+        'gross_amount' => '105000.00',
+        'fraud_status' => 'accept',
+        'currency' => 'IDR',
+    ];
+
+    $response = $this->actingAs($user)
+        ->withHeader('Accept', 'application/json')
+        ->postJson('/api/notifications', $payload);
+
+    $response->assertStatus(201)
+        ->assertJsonPath('transaction_status', 'settlement')
+        ->assertJsonPath('order_id', $payload['order_id']);
+
+    $this->assertDatabaseHas('notifications', [
+        'id_user' => $user->id,
+        'transaction_status' => 'settlement',
+        'order_id' => $payload['order_id'],
+        'payment_type' => 'gopay',
+        'merchant_id' => 'G959056152',
+    ]);
+});

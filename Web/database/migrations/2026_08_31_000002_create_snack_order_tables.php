@@ -61,10 +61,24 @@ return new class extends Migration
 
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_user')->constrained('users')->cascadeOnDelete();
-            $table->string('judul');
-            $table->text('pesan');
+            $table->foreignId('id_user')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->string('judul')->nullable();
+            $table->text('pesan')->nullable();
             $table->boolean('status_baca')->default(false);
+            $table->timestamp('transaction_time')->nullable();
+            $table->string('transaction_status')->nullable();
+            $table->string('transaction_id')->nullable();
+            $table->text('status_message')->nullable();
+            $table->string('status_code')->nullable();
+            $table->text('signature_key')->nullable();
+            $table->timestamp('settlement_time')->nullable();
+            $table->string('payment_type')->nullable();
+            $table->string('order_id')->nullable();
+            $table->string('merchant_id')->nullable();
+            $table->decimal('gross_amount', 12, 2)->nullable();
+            $table->string('fraud_status')->nullable();
+            $table->string('currency')->nullable();
+            $table->timestamps();
         });
     }
 
