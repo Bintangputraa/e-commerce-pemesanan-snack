@@ -11,7 +11,7 @@ class CartController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        return response()->json($request->user()->carts()->with(['user', 'item'])->latest()->paginate());
+        return response()->json($request->user()->carts()->with(['user', 'item'])->paginate());
     }
 
     public function store(Request $request): JsonResponse
