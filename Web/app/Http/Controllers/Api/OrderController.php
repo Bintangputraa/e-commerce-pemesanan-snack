@@ -3,16 +3,20 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Item;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Promo; // Pastikan Model Promo sudah dibuat
 use App\Models\Cart;
+use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    public function __construct(protected MidtransService $midtransService) {}
+
     public function index(Request $request): JsonResponse
     {
         return response()->json($request->user()->orders()->with(['user', 'orderDetails.item'])->latest()->paginate());
@@ -21,8 +25,13 @@ class OrderController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'alamat_pengiriman' => ['required', 'string'],
-            'kode_voucher' => ['nullable', 'string'],
+            'alamat_pengiriman' => ['required', 'string', 'max:1000'],
+            'tanggal_pesan' => ['required', 'date', 'after_or_equal:tomorrow'],
+            'kode_voucher' => ['nullable', 'string', 'max:50'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['required', 'integer', 'exists:items,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.catatan' => ['nullable', 'string', 'max:500'],
         ]);
 
         $user = $request->user();
@@ -70,13 +79,22 @@ class OrderController extends Controller
             }
         }
 
-        $order = DB::transaction(function () use ($user, $total_gross, $data, $cartItems) {
+        $order = DB::transaction(function () use ($user, $total_gross, $data, $cartItems, $data, $request) {
+            $items = Item::query()->whereIn('id', collect($data['items'])->pluck('id'))->get()->keyBy('id');
+            $subtotal = 0;
+            foreach ($data['items'] as $line) {
+                $subtotal += $items[$line['id']]->harga * $line['quantity'];
+            }
+            $discount = $data['kode_voucher'] === 'CEMIL10' ? round($subtotal * 0.1, 2) : 0;
             $newOrder = Order::create([
-                'id_user' => $user->id,
-                'total_harga' => $total_gross,
-                'alamat_pengiriman' => $data['alamat_pengiriman'],
+                'id_user' => $request->user()->id,
+                'total_harga' => $subtotal - $discount,
                 'status_pembayaran' => 'pending',
-                'status_pesanan' => 'pending'
+                'status_pesanan' => 'pending',
+                'alamat_pengiriman' => $data['alamat_pengiriman'],
+                'tanggal_pesan' => $data['tanggal_pesan'],
+                'kode_voucher' => $data['kode_voucher'] ?? null,
+                'diskon' => $discount,
             ]);
 
             foreach ($cartItems as $cart) {
@@ -94,25 +112,42 @@ class OrderController extends Controller
             return $newOrder;
         });
 
-        $midtrans_params = [
-            'transaction_details' => [
-                'order_id' => 'ORD-' . $order->id . '-' . time(),
-                'gross_amount' => (int)$total_gross,
-            ],
-            'item_details' => $item_details,
-            'customer_details' => [
-                'first_name' => $user->name,
-                'email' => $user->email,
-            ],
-        ];
+        try {
+            $snapData = $this->midtransService->createTransaction($order);
+        } catch (\Throwable $exception) {
+            report($exception);
 
-        $snapToken = \Midtrans\Snap::getSnapToken($midtrans_params);
+            // Jika Midtrans error, kembalikan response JSON (Pesanan tetap tersimpan sebagai pending di DB)
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesanan berhasil dibuat, namun pembayaran Midtrans gagal dibuat. ' . $exception->getMessage(),
+                'data' => [
+                    'order_id' => $order->id_order, // Dikirim agar aplikasi bisa melakukan 'retry payment' nanti
+                ]
+            ], 502); // 502 Bad Gateway
+        }
 
+        // 4. Update data transaksi Midtrans ke Order
+        $order->update([
+            'midtrans_order_id' => $snapData['order_id'] ?? $order->id_order,
+            'snap_token' => $snapData['token'] ?? null,
+            'payment_url' => $snapData['redirect_url'] ?? null,
+            'transaction_id' => $snapData['transaction_id'] ?? null,
+            'transaction_status' => 'pending',
+        ]);
+
+        // 5. Kembalikan Response Sukses ke Aplikasi
         return response()->json([
             'success' => true,
-            'order' => $order->load(['user', 'orderDetails.item']),
-            'snap_token' => $snapToken
-        ], 201);
+            'message' => 'Pesanan berhasil dibuat.',
+            'data' => [
+                'order_id' => $order->id_order,
+                'total_pembayaran' => $order->total_harga,
+                'snap_token' => $snapData['token'] ?? null,
+                'payment_url' => $snapData['redirect_url'] ?? null,
+                'order' => $order->fresh()->load('orderDetails.item'), // Me-load relasi untuk ditampilkan di aplikasi
+            ]
+        ], 201); // 201 Created
     }
 
     public function update(Request $request, Order $order): JsonResponse
