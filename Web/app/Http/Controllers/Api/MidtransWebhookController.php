@@ -49,8 +49,22 @@ class MidtransWebhookController extends Controller
         ];
 
         $notification = null;
+        $orderId = (string) ($payload['order_id'] ?? '');
+        $transactionId = $payload['transaction_id'] ?? null;
+
         try {
-            $notification = Notification::query()->create($notificationData);
+            $notification = Notification::query()
+                ->when($orderId !== '', fn ($query) => $query->where('order_id', $orderId))
+                ->when($transactionId, fn ($query) => $query->orWhere('transaction_id', $transactionId))
+                ->latest('updated_at')
+                ->first();
+
+            if ($notification) {
+                $notification->fill($notificationData);
+                $notification->save();
+            } else {
+                $notification = Notification::query()->create($notificationData);
+            }
         } catch (\Throwable $e) {
             report($e);
         }
@@ -62,7 +76,6 @@ class MidtransWebhookController extends Controller
             ], 403);
         }
 
-        $orderId = (string) ($payload['order_id'] ?? '');
         $order = Order::query()
             ->where('midtrans_order_id', $orderId)
             ->first();
