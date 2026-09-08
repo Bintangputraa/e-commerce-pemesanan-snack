@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('auth/register', [AuthController::class, 'register'])->name('api.auth.register');
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('api.auth.login');
 Route::post('midtrans/notification', [MidtransWebhookController::class, 'handle'])->name('api.midtrans.notification');
+Route::post('notifications', [NotificationController::class, 'store'])->name('api.notifications.store');
 Route::apiResource('items', ItemController::class)->only(['index', 'show']);
 
 Route::middleware('api.token')->group(function (): void {
@@ -27,7 +28,9 @@ Route::middleware('api.token')->group(function (): void {
     Route::apiResource('carts', CartController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('favorites', FavoriteController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'update', 'destroy']);
-    Route::apiResource('notifications', NotificationController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
+    Route::patch('notifications/{notification}', [NotificationController::class, 'update'])->name('api.notifications.update');
+    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('api.notifications.destroy');
     Route::apiResource('order-details', OrderDetailController::class)->only(['index', 'store']);
     Route::patch('orders/{id_order}/items/{id_item}', [OrderDetailController::class, 'update']);
     Route::delete('orders/{id_order}/items/{id_item}', [OrderDetailController::class, 'destroy']);
