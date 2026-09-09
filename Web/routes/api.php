@@ -27,8 +27,8 @@ Route::middleware('api.token')->group(function (): void {
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('api.auth.logout');
 
     Route::apiResource('carts', CartController::class)->only(['index', 'store', 'update', 'destroy']);
-    Route::get('orders/favorites', [CustomerOrderController::class, 'favorites'])->name('orders.favorites');
-    Route::post('favorites/{itemId}/toggle', [CustomerOrderController::class, 'toggleFavorite'])->name('favorites.toggle');
+    Route::get('orders/favorites', [CustomerOrderController::class, 'favorites'])->name('orders.favoritesApp');
+    Route::post('favorites/{itemId}/toggle', [CustomerOrderController::class, 'toggleFavorite'])->name('favorites.toggleApp');
     Route::post('orders', [OrderController::class, 'store'])->name('api.orders.store');
     Route::get('orders/history', [CustomerOrderController::class, 'historyApp'])->name('orders.historyApp');
     Route::get('notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
