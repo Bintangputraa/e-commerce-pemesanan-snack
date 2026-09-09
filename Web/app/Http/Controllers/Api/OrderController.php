@@ -20,7 +20,7 @@ class OrderController extends Controller
 
     public function index(): JsonResponse
     {
-        $data = Order::with('orderDetails.item')
+        $data = Order::with(['user', 'orderDetails.item'])
             ->orderByDesc('tanggal_pesan')
             ->get();
         return response()->json($data);
