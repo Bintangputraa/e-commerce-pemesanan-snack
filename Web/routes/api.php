@@ -20,7 +20,7 @@ Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttl
 Route::post('midtrans/notification', [MidtransWebhookController::class, 'handle'])->name('api.midtrans.notification');
 Route::post('notifications', [NotificationController::class, 'store'])->name('api.notifications.store');
 Route::apiResource('items', ItemController::class)->only(['index', 'show']);
-Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'update', 'destroy']);
+Route::get('orders', [OrderController::class, 'index'])->name('api.orders.index');
 
 Route::middleware('api.token')->group(function (): void {
     Route::get('auth/me', [AuthController::class, 'me'])->name('api.auth.me');
@@ -28,7 +28,7 @@ Route::middleware('api.token')->group(function (): void {
 
     Route::apiResource('carts', CartController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('favorites', FavoriteController::class)->only(['index', 'store', 'update', 'destroy']);
-    
+    Route::post('orders', [OrderController::class, 'store'])->name('api.orders.store');
     Route::get('orders/history', [CustomerOrderController::class, 'historyApp'])->name('orders.historyApp');
     Route::get('notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
     Route::patch('notifications/{notification}', [NotificationController::class, 'update'])->name('api.notifications.update');
