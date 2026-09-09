@@ -18,9 +18,9 @@ class OrderController extends Controller
 {
     public function __construct(protected MidtransService $midtransService) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
-        return response()->json($request->user()->orders()->with(['user', 'orderDetails.item'])->latest()->paginate());
+        return response()->json();
     }
 
     public function store(Request $request): RedirectResponse|JsonResponse
