@@ -34,6 +34,25 @@ class CustomerOrderController extends Controller
         ]);
     }
 
+    public function historyApp(Request $request): JsonResponse
+    {
+        $orders = $request->user()->orders()->whereIn('status_pembayaran', ['pending', 'paid'])->get();
+        foreach ($orders as $order) {
+            try {
+                $this->midtransService->synchronizeStatus($order);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        return response()->json([
+            'orders' => $request->user()->orders()
+                ->latest()
+                ->with(['user', 'orderDetails.item'])
+                ->get(),
+        ]);
+    }
+
     public function process(Request $request): Response
     {
         $orders = $request->user()->orders()->whereIn('status_pembayaran', ['pending', 'paid'])->get();

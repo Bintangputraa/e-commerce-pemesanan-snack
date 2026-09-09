@@ -28,6 +28,7 @@ Route::middleware('api.token')->group(function (): void {
     Route::apiResource('carts', CartController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('favorites', FavoriteController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('orders/history', [CustomerOrderController::class, 'historyApp'])->name('orders.historyApp');
     Route::get('notifications', [NotificationController::class, 'index'])->name('api.notifications.index');
     Route::patch('notifications/{notification}', [NotificationController::class, 'update'])->name('api.notifications.update');
     Route::delete('notifications/{notification}', [NotificationController::class, 'destroy'])->name('api.notifications.destroy');
