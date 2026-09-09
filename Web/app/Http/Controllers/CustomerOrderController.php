@@ -135,6 +135,19 @@ class CustomerOrderController extends Controller
         ]);
     }
 
+    public function favoritesApp(Request $request): JsonResponse
+    {
+        $favorites = Favorite::query()
+            ->where('id_user', $request->user()->id)
+            ->with('item')
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json([
+            'favorites' => $favorites,
+        ]);
+    }
+
     public function toggleFavorite(Request $request, int $itemId): RedirectResponse
     {
         Item::query()->findOrFail($itemId);
