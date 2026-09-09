@@ -168,4 +168,27 @@ class CustomerOrderController extends Controller
 
         return back();
     }
+
+    public function toggleFavoriteApp(Request $request, int $itemId): JsonResponse
+    {
+        Item::query()->findOrFail($itemId);
+
+        $favorite = Favorite::query()
+            ->where('id_user', $request->user()->id)
+            ->where('id_item', $itemId)
+            ->first();
+
+        if ($favorite) {
+            $favorite->delete();
+        } else {
+            Favorite::create([
+                'id_user' => $request->user()->id,
+                'id_item' => $itemId,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Favorite status toggled successfully.',
+        ]);
+    }
 }
